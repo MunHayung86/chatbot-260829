@@ -577,4 +577,3 @@ if prompt := st.chat_input(
             "content": response,
         }
     )
-```
