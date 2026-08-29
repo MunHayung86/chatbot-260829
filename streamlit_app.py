@@ -992,45 +992,47 @@ if st.session_state.pending_question and not openai_api_key:
 
 
 # ============================================================
-# 8. API KEY 없을 때
+# 8. TEAM PICKER + CATEGORY CARDS
+# (always visible, regardless of whether an API key has been
+#  entered yet -- only the actual chat below requires a key)
 # ============================================================
 
-if not openai_api_key:
+render_team_picker()
 
-    render_team_picker()
-
-    st.html(
-        dedent(
-            """
-            <div class="section-header">
-                <div>
-                    <div class="section-label">START HERE</div>
-                    <div class="section-title">무엇부터 배워볼까요?</div>
-                </div>
-
-                <div class="section-count">
-                    04 CATEGORIES
-                </div>
+st.html(
+    dedent(
+        """
+        <div class="section-header">
+            <div>
+                <div class="section-label">START HERE</div>
+                <div class="section-title">무엇부터 배워볼까요?</div>
             </div>
-            """
-        )
+
+            <div class="section-count">
+                04 CATEGORIES
+            </div>
+        </div>
+        """
     )
+)
 
-    col1, col2 = st.columns(2)
+col1, col2 = st.columns(2)
 
-    with col1:
-        render_category_card(CATEGORIES[0])
+with col1:
+    render_category_card(CATEGORIES[0])
 
-    with col2:
-        render_category_card(CATEGORIES[1])
+with col2:
+    render_category_card(CATEGORIES[1])
 
-    col3, col4 = st.columns(2)
+col3, col4 = st.columns(2)
 
-    with col3:
-        render_category_card(CATEGORIES[2])
+with col3:
+    render_category_card(CATEGORIES[2])
 
-    with col4:
-        render_category_card(CATEGORIES[3])
+with col4:
+    render_category_card(CATEGORIES[3])
+
+if not st.session_state.messages:
 
     st.html(
         dedent(
@@ -1078,398 +1080,395 @@ if not openai_api_key:
         )
     )
 
-    st.html(
-        dedent(
-            """
-            <div class="footer">
-                <div>KBO BASEBALL LEARNING</div>
-                <div>AI BASEBALL ASSISTANT</div>
-            </div>
+
+if openai_api_key:
+
+    # ============================================================
+    # 9. OPENAI CLIENT
+    # ============================================================
+
+    client = OpenAI(
+        api_key=openai_api_key
+    )
+
+
+    # ============================================================
+    # 10. SYSTEM PROMPT
+    # ============================================================
+
+    system_prompt = dedent(
+        """
+    당신은 KBO 야구를 처음 접하는 사람을 위한
+    친절한 야구 학습 도우미입니다.
+
+    사용자는 야구 초보자일 수 있습니다.
+    전문적인 야구 용어를 사용할 경우 반드시
+    쉬운 말로 풀어서 설명해주세요.
+
+
+    [주요 역할]
+
+    다음 네 가지 영역을 중심으로 설명합니다.
+
+    1. 야구 규칙
+    2. 야구 용어
+    3. 야구 기록
+    4. 경기 상황
+
+
+    [답변 방식]
+
+    개념을 설명할 때 가능하면 다음 순서를 사용합니다.
+
+    ① 한 줄 정의
+    ② 쉽게 풀어서 설명
+    ③ 실제 경기 상황 예시
+    ④ 경기에서 왜 중요한지 설명
+    ⑤ 비슷한 개념과 비교
+
+    단순한 사전식 정의로 끝내지 말고
+    사용자가 실제 야구 경기를 볼 때
+    이해할 수 있도록 설명해주세요.
+
+
+    [초보자 배려]
+
+    야구를 처음 보는 사람도 이해할 수 있도록
+    전문 용어를 연속해서 사용하지 마세요.
+
+    사용자가 잘못 이해하고 있다면
+    부드럽게 교정해주세요.
+
+    예:
+    "거의 맞아요. 다만 한 가지 중요한 차이가 있어요."
+    와 같은 방식으로 설명합니다.
+
+
+    [야구 규칙]
+
+    스트라이크, 볼, 아웃, 이닝,
+    포스 아웃, 태그 아웃, 병살,
+    희생플라이, 희생번트, 도루,
+    인필드 플라이, 야수선택 등을
+    실제 경기 상황과 연결해서 설명합니다.
+
+
+    [야구 기록]
+
+    타율, 출루율, 장타율, OPS,
+    ERA, WHIP, 승리, 세이브 등의 기록을
+    공식만 설명하지 말고
+    그 숫자가 실제 경기에서 무엇을 의미하는지
+    설명해주세요.
+
+    필요하다면 표를 사용해서
+    비슷한 기록을 비교해주세요.
+
+
+    [경기 상황 분석]
+
+    사용자가 경기 상황을 설명하면 다음 순서로 분석합니다.
+
+    상황
+    → 주자 위치
+    → 아웃 카운트
+    → 타구
+    → 수비 행동
+    → 주자 행동
+    → 결과
+
+    그리고 왜 그런 결과가 발생했는지 설명해주세요.
+
+
+    [KBO]
+
+    KBO 리그 관련 질문에서는
+    KBO 리그의 맥락을 우선해서 설명해주세요.
+
+    다른 리그와 규칙이 다를 수 있다면
+    어느 리그 기준인지 구분해서 설명해주세요.
+
+
+    [최신 정보]
+
+    현재 시즌 선수 기록,
+    오늘 경기 결과,
+    현재 순위,
+    최신 규정 등 실시간 정보가 필요한 경우
+    확인할 수 있는 최신 데이터가 제공되지 않았다면
+    추측하지 마세요.
+
+    확실하지 않은 정보는
+    확실하지 않다고 알려주세요.
+
+
+    [말투]
+
+    친절하고 차분하게 설명해주세요.
+
+    야구를 잘 모르는 사람이 질문하는 것을
+    부끄럽게 느끼지 않도록 편안하게 설명해주세요.
+
+    "야구를 같이 보면서 알려주는 친구"처럼
+    설명해주세요.
+    """
+    )
+
+    if st.session_state.favorite_team:
+        _team_name = TEAMS_BY_KEY[st.session_state.favorite_team]["name"]
+        system_prompt += dedent(
+            f"""
+
+            [사용자 응원팀]
+
+            사용자는 {_team_name}을(를) 응원하는 팬입니다.
+            가능하면 설명할 때 이 팀과 관련된 예시를 자연스럽게
+            곁들여 주세요.
+
+            다만 최신 선수 명단, 최근 경기 결과, 순위처럼
+            실시간 정보가 필요한 내용은 확실하지 않다면
+            추측하지 말고 모른다고 알려주세요.
             """
         )
-    )
-
-    st.stop()
 
 
-# ============================================================
-# 9. OPENAI CLIENT
-# ============================================================
+    # ============================================================
+    # 11. RESPONSE FUNCTION
+    # ============================================================
 
-client = OpenAI(
-    api_key=openai_api_key
-)
+    def get_response():
 
-
-# ============================================================
-# 10. SYSTEM PROMPT
-# ============================================================
-
-system_prompt = """
-당신은 KBO 야구를 처음 접하는 사람을 위한
-친절한 야구 학습 도우미입니다.
-
-사용자는 야구 초보자일 수 있습니다.
-전문적인 야구 용어를 사용할 경우 반드시
-쉬운 말로 풀어서 설명해주세요.
-
-
-[주요 역할]
-
-다음 네 가지 영역을 중심으로 설명합니다.
-
-1. 야구 규칙
-2. 야구 용어
-3. 야구 기록
-4. 경기 상황
-
-
-[답변 방식]
-
-개념을 설명할 때 가능하면 다음 순서를 사용합니다.
-
-① 한 줄 정의
-② 쉽게 풀어서 설명
-③ 실제 경기 상황 예시
-④ 경기에서 왜 중요한지 설명
-⑤ 비슷한 개념과 비교
-
-단순한 사전식 정의로 끝내지 말고
-사용자가 실제 야구 경기를 볼 때
-이해할 수 있도록 설명해주세요.
-
-
-[초보자 배려]
-
-야구를 처음 보는 사람도 이해할 수 있도록
-전문 용어를 연속해서 사용하지 마세요.
-
-사용자가 잘못 이해하고 있다면
-부드럽게 교정해주세요.
-
-예:
-"거의 맞아요. 다만 한 가지 중요한 차이가 있어요."
-와 같은 방식으로 설명합니다.
-
-
-[야구 규칙]
-
-스트라이크, 볼, 아웃, 이닝,
-포스 아웃, 태그 아웃, 병살,
-희생플라이, 희생번트, 도루,
-인필드 플라이, 야수선택 등을
-실제 경기 상황과 연결해서 설명합니다.
-
-
-[야구 기록]
-
-타율, 출루율, 장타율, OPS,
-ERA, WHIP, 승리, 세이브 등의 기록을
-공식만 설명하지 말고
-그 숫자가 실제 경기에서 무엇을 의미하는지
-설명해주세요.
-
-필요하다면 표를 사용해서
-비슷한 기록을 비교해주세요.
-
-
-[경기 상황 분석]
-
-사용자가 경기 상황을 설명하면 다음 순서로 분석합니다.
-
-상황
-→ 주자 위치
-→ 아웃 카운트
-→ 타구
-→ 수비 행동
-→ 주자 행동
-→ 결과
-
-그리고 왜 그런 결과가 발생했는지 설명해주세요.
-
-
-[KBO]
-
-KBO 리그 관련 질문에서는
-KBO 리그의 맥락을 우선해서 설명해주세요.
-
-다른 리그와 규칙이 다를 수 있다면
-어느 리그 기준인지 구분해서 설명해주세요.
-
-
-[최신 정보]
-
-현재 시즌 선수 기록,
-오늘 경기 결과,
-현재 순위,
-최신 규정 등 실시간 정보가 필요한 경우
-확인할 수 있는 최신 데이터가 제공되지 않았다면
-추측하지 마세요.
-
-확실하지 않은 정보는
-확실하지 않다고 알려주세요.
-
-
-[말투]
-
-친절하고 차분하게 설명해주세요.
-
-야구를 잘 모르는 사람이 질문하는 것을
-부끄럽게 느끼지 않도록 편안하게 설명해주세요.
-
-"야구를 같이 보면서 알려주는 친구"처럼
-설명해주세요.
-"""
-
-if st.session_state.favorite_team:
-    _team_name = TEAMS_BY_KEY[st.session_state.favorite_team]["name"]
-    system_prompt += dedent(
-        f"""
-
-        [사용자 응원팀]
-
-        사용자는 {_team_name}을(를) 응원하는 팬입니다.
-        가능하면 설명할 때 이 팀과 관련된 예시를 자연스럽게
-        곁들여 주세요.
-
-        다만 최신 선수 명단, 최근 경기 결과, 순위처럼
-        실시간 정보가 필요한 내용은 확실하지 않다면
-        추측하지 말고 모른다고 알려주세요.
-        """
-    )
-
-
-# ============================================================
-# 11. RESPONSE FUNCTION
-# ============================================================
-
-def get_response():
-
-    return client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {
-                "role": "system",
-                "content": system_prompt,
-            },
-            *[
+        return client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
                 {
-                    "role": message["role"],
-                    "content": message["content"],
-                }
-                for message in st.session_state.messages
+                    "role": "system",
+                    "content": system_prompt,
+                },
+                *[
+                    {
+                        "role": message["role"],
+                        "content": message["content"],
+                    }
+                    for message in st.session_state.messages
+                ],
             ],
-        ],
-        stream=True,
-    )
+            stream=True,
+        )
 
 
-# ============================================================
-# 12. CONVERSATION
-# ============================================================
+    # ============================================================
+    # 12. CONVERSATION
+    # ============================================================
 
-if st.session_state.messages:
+    if st.session_state.messages:
 
-    st.html(
-        dedent(
-            """
-            <div class="chat-section">
+        st.html(
+            dedent(
+                """
+                <div class="chat-section">
 
+                    <div class="section-header">
+                        <div>
+                            <div class="section-label">
+                                CONVERSATION
+                            </div>
+
+                            <div class="section-title">
+                                야구를 함께 알아볼게요.
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                """
+            )
+        )
+
+        for message in st.session_state.messages:
+
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+
+
+    # ============================================================
+    # 13. STARTER QUESTIONS
+    # ============================================================
+
+    if not st.session_state.messages:
+
+        st.html(
+            dedent(
+                """
                 <div class="section-header">
                     <div>
                         <div class="section-label">
-                            CONVERSATION
+                            START WITH A QUESTION
                         </div>
 
                         <div class="section-title">
-                            야구를 함께 알아볼게요.
+                            궁금한 것부터 시작하세요.
                         </div>
                     </div>
-                </div>
 
-            </div>
-            """
-        )
-    )
-
-    for message in st.session_state.messages:
-
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
-
-
-# ============================================================
-# 13. STARTER QUESTIONS
-# ============================================================
-
-if not st.session_state.messages:
-
-    st.html(
-        dedent(
-            """
-            <div class="section-header">
-                <div>
-                    <div class="section-label">
-                        START WITH A QUESTION
-                    </div>
-
-                    <div class="section-title">
-                        궁금한 것부터 시작하세요.
+                    <div class="section-count">
+                        BEGINNER
                     </div>
                 </div>
-
-                <div class="section-count">
-                    BEGINNER
-                </div>
-            </div>
-            """
-        )
-    )
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-
-        if st.button(
-            "스트라이크와 볼은 뭐가 달라?",
-            key="starter_rule",
-        ):
-
-            st.session_state.messages.append(
-                {
-                    "role": "user",
-                    "content": (
-                        "야구에서 스트라이크와 볼은 "
-                        "정확히 무엇이 다른지 야구 초보자에게 "
-                        "쉽게 설명해줘."
-                    ),
-                }
+                """
             )
-
-            st.session_state.pending_question = True
-            st.rerun()
-
-    with col2:
-
-        if st.button(
-            "병살은 어떻게 만들어져?",
-            key="starter_double_play",
-        ):
-
-            st.session_state.messages.append(
-                {
-                    "role": "user",
-                    "content": (
-                        "야구에서 병살이 무엇인지 설명해줘. "
-                        "1루에 주자가 있는 상황에서 타자가 "
-                        "땅볼을 쳤을 때를 예로 들어줘."
-                    ),
-                }
-            )
-
-            st.session_state.pending_question = True
-            st.rerun()
-
-    col3, col4 = st.columns(2)
-
-    with col3:
-
-        if st.button(
-            "OPS가 높으면 좋은 선수야?",
-            key="starter_ops",
-        ):
-
-            st.session_state.messages.append(
-                {
-                    "role": "user",
-                    "content": (
-                        "야구에서 OPS가 무엇인지 설명해줘. "
-                        "OPS가 높다는 것이 실제 경기에서 "
-                        "어떤 의미인지 야구 초보자에게 알려줘."
-                    ),
-                }
-            )
-
-            st.session_state.pending_question = True
-            st.rerun()
-
-    with col4:
-
-        if st.button(
-            "포스 아웃과 태그 아웃의 차이는?",
-            key="starter_out",
-        ):
-
-            st.session_state.messages.append(
-                {
-                    "role": "user",
-                    "content": (
-                        "포스 아웃과 태그 아웃의 차이를 "
-                        "실제 경기 상황을 예로 들어서 설명해줘."
-                    ),
-                }
-            )
-
-            st.session_state.pending_question = True
-            st.rerun()
-
-
-# ============================================================
-# 14. STARTER QUESTION RESPONSE
-# ============================================================
-
-if (
-    st.session_state.pending_question
-    and st.session_state.messages
-    and st.session_state.messages[-1]["role"] == "user"
-):
-
-    with st.chat_message("assistant"):
-
-        response = st.write_stream(
-            get_response()
         )
 
-    st.session_state.messages.append(
-        {
-            "role": "assistant",
-            "content": response,
-        }
-    )
+        col1, col2 = st.columns(2)
 
-    st.session_state.pending_question = None
+        with col1:
+
+            if st.button(
+                "스트라이크와 볼은 뭐가 달라?",
+                key="starter_rule",
+            ):
+
+                st.session_state.messages.append(
+                    {
+                        "role": "user",
+                        "content": (
+                            "야구에서 스트라이크와 볼은 "
+                            "정확히 무엇이 다른지 야구 초보자에게 "
+                            "쉽게 설명해줘."
+                        ),
+                    }
+                )
+
+                st.session_state.pending_question = True
+                st.rerun()
+
+        with col2:
+
+            if st.button(
+                "병살은 어떻게 만들어져?",
+                key="starter_double_play",
+            ):
+
+                st.session_state.messages.append(
+                    {
+                        "role": "user",
+                        "content": (
+                            "야구에서 병살이 무엇인지 설명해줘. "
+                            "1루에 주자가 있는 상황에서 타자가 "
+                            "땅볼을 쳤을 때를 예로 들어줘."
+                        ),
+                    }
+                )
+
+                st.session_state.pending_question = True
+                st.rerun()
+
+        col3, col4 = st.columns(2)
+
+        with col3:
+
+            if st.button(
+                "OPS가 높으면 좋은 선수야?",
+                key="starter_ops",
+            ):
+
+                st.session_state.messages.append(
+                    {
+                        "role": "user",
+                        "content": (
+                            "야구에서 OPS가 무엇인지 설명해줘. "
+                            "OPS가 높다는 것이 실제 경기에서 "
+                            "어떤 의미인지 야구 초보자에게 알려줘."
+                        ),
+                    }
+                )
+
+                st.session_state.pending_question = True
+                st.rerun()
+
+        with col4:
+
+            if st.button(
+                "포스 아웃과 태그 아웃의 차이는?",
+                key="starter_out",
+            ):
+
+                st.session_state.messages.append(
+                    {
+                        "role": "user",
+                        "content": (
+                            "포스 아웃과 태그 아웃의 차이를 "
+                            "실제 경기 상황을 예로 들어서 설명해줘."
+                        ),
+                    }
+                )
+
+                st.session_state.pending_question = True
+                st.rerun()
 
 
-# ============================================================
-# 15. FREE QUESTION
-# ============================================================
+    # ============================================================
+    # 14. STARTER QUESTION RESPONSE
+    # ============================================================
 
-if prompt := st.chat_input(
-    "야구에 대해 궁금한 것을 물어보세요..."
-):
+    if (
+        st.session_state.pending_question
+        and st.session_state.messages
+        and st.session_state.messages[-1]["role"] == "user"
+    ):
 
-    st.session_state.messages.append(
-        {
-            "role": "user",
-            "content": prompt,
-        }
-    )
+        with st.chat_message("assistant"):
 
-    with st.chat_message("user"):
-        st.markdown(prompt)
+            response = st.write_stream(
+                get_response()
+            )
 
-    with st.chat_message("assistant"):
-
-        response = st.write_stream(
-            get_response()
+        st.session_state.messages.append(
+            {
+                "role": "assistant",
+                "content": response,
+            }
         )
 
-    st.session_state.messages.append(
-        {
-            "role": "assistant",
-            "content": response,
-        }
-    )
+        st.session_state.pending_question = None
+
+
+    # ============================================================
+    # 15. FREE QUESTION
+    # ============================================================
+
+    if prompt := st.chat_input(
+        "야구에 대해 궁금한 것을 물어보세요..."
+    ):
+
+        st.session_state.messages.append(
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        )
+
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        with st.chat_message("assistant"):
+
+            response = st.write_stream(
+                get_response()
+            )
+
+        st.session_state.messages.append(
+            {
+                "role": "assistant",
+                "content": response,
+            }
+        )
+
+
+
+else:
+
+    st.info("위에 OpenAI API Key를 입력하면 여기서 바로 채팅으로 물어볼 수 있어요.")
 
 
 # ============================================================
