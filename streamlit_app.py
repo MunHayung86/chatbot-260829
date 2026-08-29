@@ -531,9 +531,12 @@ st.markdown(
         }
 
         [data-testid="stChatMessage"] {
-            background: transparent;
-            border: none;
-            padding: 12px 0;
+            background: #FFFFFF;
+            border: 1px solid #E1E1DE;
+            border-radius: 16px;
+            padding: 16px 18px;
+            margin-bottom: 14px;
+            box-shadow: 0 2px 8px rgba(17, 17, 17, 0.03);
         }
 
         [data-testid="stChatMessageContent"] {
@@ -541,20 +544,60 @@ st.markdown(
             line-height: 1.8;
         }
 
+        /* The chat input lives in a bar pinned to the bottom of
+           the viewport. By default it's easy to miss against a
+           page that already has a lot going on, so we give the
+           whole bar a clear surface, a top border/shadow to
+           separate it from scrolling content, and align its
+           width with the rest of the page. Selectors are
+           listed for a couple of possible Streamlit test-ids
+           since the internal name has changed across versions
+           -- unmatched ones are simply ignored. */
+
+        [data-testid="stBottom"] {
+            background: #F4F4F2;
+            border-top: 1px solid #E1E1DE;
+            box-shadow: 0 -6px 20px rgba(17, 17, 17, 0.05);
+        }
+
+        [data-testid="stBottomBlockContainer"] {
+            max-width: 1180px;
+            padding-top: 16px;
+            padding-bottom: 20px;
+        }
+
         [data-testid="stChatInput"] {
-            padding-top: 10px;
+            padding-top: 0;
         }
 
         [data-testid="stChatInput"] textarea {
             border: 1px solid #D8D8D5;
-            border-radius: 14px;
+            border-radius: 16px;
             background: #FFFFFF;
             font-size: 14px;
+            padding: 14px 16px;
         }
 
         [data-testid="stChatInput"] textarea:focus {
             border-color: #FF5722;
-            box-shadow: 0 0 0 1px #FF5722;
+            box-shadow: 0 0 0 2px rgba(255, 87, 34, 0.18);
+        }
+
+        [data-testid="stChatInput"] button {
+            background: #FF5722 !important;
+            border-radius: 50% !important;
+            border: none !important;
+        }
+
+        [data-testid="stChatInput"] button svg {
+            fill: #FFFFFF !important;
+        }
+
+        /* Leave enough room at the bottom of the scrollable
+           content so the last chat message isn't hidden behind
+           the fixed input bar above. */
+        .block-container {
+            padding-bottom: 140px;
         }
 
 
@@ -1287,7 +1330,9 @@ if openai_api_key:
 
         for message in st.session_state.messages:
 
-            with st.chat_message(message["role"]):
+            avatar = "⚾" if message["role"] == "assistant" else "🧑"
+
+            with st.chat_message(message["role"], avatar=avatar):
                 st.markdown(message["content"])
 
 
@@ -1417,7 +1462,7 @@ if openai_api_key:
         and st.session_state.messages[-1]["role"] == "user"
     ):
 
-        with st.chat_message("assistant"):
+        with st.chat_message("assistant", avatar="⚾"):
 
             response = st.write_stream(
                 get_response()
@@ -1448,10 +1493,10 @@ if openai_api_key:
             }
         )
 
-        with st.chat_message("user"):
+        with st.chat_message("user", avatar="🧑"):
             st.markdown(prompt)
 
-        with st.chat_message("assistant"):
+        with st.chat_message("assistant", avatar="⚾"):
 
             response = st.write_stream(
                 get_response()
