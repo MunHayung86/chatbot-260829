@@ -1,5 +1,6 @@
 import streamlit as st
 from openai import OpenAI
+from textwrap import dedent
 
 
 # ============================================================
@@ -19,428 +20,508 @@ st.set_page_config(
 # ============================================================
 
 st.markdown(
-    """
-    <style>
+    dedent(
+        """
+        <style>
 
-    /* =========================
-       GLOBAL
-       ========================= */
+        /* ====================================================
+           GLOBAL
+        ==================================================== */
 
-    .stApp {
-        background: #F5F5F3;
-        color: #111111;
-    }
-
-    .block-container {
-        max-width: 1160px;
-        padding-top: 42px;
-        padding-bottom: 80px;
-    }
-
-    header {
-        visibility: hidden;
-    }
-
-    #MainMenu {
-        visibility: hidden;
-    }
-
-    footer {
-        visibility: hidden;
-    }
-
-    * {
-        font-family:
-            -apple-system,
-            BlinkMacSystemFont,
-            "Pretendard",
-            "Noto Sans KR",
-            "Apple SD Gothic Neo",
-            "Segoe UI",
-            sans-serif;
-    }
-
-
-    /* =========================
-       TOP BRAND
-       ========================= */
-
-    .brand-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 24px;
-    }
-
-    .brand-name {
-        font-size: 15px;
-        font-weight: 900;
-        letter-spacing: 0.08em;
-    }
-
-    .brand-dot {
-        display: inline-block;
-        width: 9px;
-        height: 9px;
-        margin-right: 8px;
-        border-radius: 50%;
-        background: #FF5722;
-    }
-
-    .brand-meta {
-        font-size: 10px;
-        font-weight: 800;
-        letter-spacing: 0.12em;
-        color: #999999;
-    }
-
-
-    /* =========================
-       HERO
-       ========================= */
-
-    .hero-box {
-        position: relative;
-        overflow: hidden;
-        min-height: 350px;
-        padding: 48px 52px;
-        margin-bottom: 44px;
-        border-radius: 24px;
-        background: #111111;
-        box-sizing: border-box;
-    }
-
-    .hero-kicker {
-        font-size: 10px;
-        font-weight: 900;
-        letter-spacing: 0.16em;
-        color: #FF5722;
-        margin-bottom: 22px;
-    }
-
-    .hero-title {
-        color: #FFFFFF;
-        font-size: clamp(46px, 6vw, 76px);
-        line-height: 0.98;
-        font-weight: 950;
-        letter-spacing: -0.065em;
-    }
-
-    .hero-orange {
-        color: #FF5722;
-    }
-
-    .hero-description {
-        margin-top: 25px;
-        max-width: 520px;
-        color: #A7A7A7;
-        font-size: 14px;
-        line-height: 1.75;
-    }
-
-    .hero-year {
-        position: absolute;
-        right: 45px;
-        bottom: 24px;
-        color: rgba(255,255,255,0.07);
-        font-size: 120px;
-        font-weight: 950;
-        letter-spacing: -0.08em;
-    }
-
-    .hero-circle {
-        position: absolute;
-        width: 360px;
-        height: 360px;
-        right: -90px;
-        top: -100px;
-        border: 1px solid rgba(255,87,34,0.3);
-        border-radius: 50%;
-    }
-
-    .hero-circle-small {
-        position: absolute;
-        width: 230px;
-        height: 230px;
-        right: 5px;
-        top: -35px;
-        border: 1px dashed rgba(255,87,34,0.5);
-        border-radius: 50%;
-    }
-
-
-    /* =========================
-       SECTION
-       ========================= */
-
-    .section-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        margin-bottom: 17px;
-    }
-
-    .section-label {
-        margin-bottom: 6px;
-        font-size: 10px;
-        font-weight: 900;
-        letter-spacing: 0.15em;
-        color: #FF5722;
-    }
-
-    .section-title {
-        font-size: 25px;
-        font-weight: 900;
-        letter-spacing: -0.05em;
-        color: #111111;
-    }
-
-    .section-count {
-        font-size: 10px;
-        font-weight: 800;
-        letter-spacing: 0.1em;
-        color: #999999;
-    }
-
-
-    /* =========================
-       STREAMLIT BUTTON
-       ========================= */
-
-    div.stButton > button {
-        width: 100%;
-        min-height: 155px;
-        padding: 24px;
-        border: 1px solid #DDDDD9;
-        border-radius: 18px;
-        background: #FFFFFF;
-        color: #111111;
-        text-align: left;
-        white-space: pre-wrap;
-        box-shadow: none;
-        transition:
-            transform 0.15s ease,
-            border-color 0.15s ease,
-            box-shadow 0.15s ease;
-    }
-
-    div.stButton > button:hover {
-        border-color: #111111;
-        background: #FFFFFF;
-        color: #111111;
-        transform: translateY(-3px);
-        box-shadow: 0 10px 25px rgba(0,0,0,0.07);
-    }
-
-    div.stButton > button p {
-        font-size: 14px;
-        line-height: 1.7;
-    }
-
-
-    /* =========================
-       API KEY
-       ========================= */
-
-    .api-label {
-        margin-top: 6px;
-        margin-bottom: 7px;
-        font-size: 10px;
-        font-weight: 900;
-        letter-spacing: 0.14em;
-        color: #888888;
-    }
-
-    .api-description {
-        margin-bottom: 9px;
-        font-size: 12px;
-        color: #999999;
-    }
-
-    div[data-testid="stTextInput"] input {
-        border: 1px solid #DDDDD9;
-        border-radius: 11px;
-        background: #FFFFFF;
-    }
-
-    div[data-testid="stTextInput"] input:focus {
-        border-color: #FF5722;
-        box-shadow: 0 0 0 1px #FF5722;
-    }
-
-
-    /* =========================
-       POPULAR QUESTIONS
-       ========================= */
-
-    .question-box {
-        margin-top: 35px;
-        padding: 27px 28px;
-        border-radius: 20px;
-        background: #111111;
-    }
-
-    .question-title {
-        margin-bottom: 18px;
-        color: #FFFFFF;
-        font-size: 22px;
-        font-weight: 900;
-        letter-spacing: -0.04em;
-    }
-
-    .question-label {
-        margin-bottom: 6px;
-        color: #FF5722;
-        font-size: 10px;
-        font-weight: 900;
-        letter-spacing: 0.15em;
-    }
-
-    .question-box div.stButton > button {
-        min-height: 58px;
-        padding: 14px 17px;
-        border: 1px solid #303030;
-        border-radius: 10px;
-        background: #1B1B1B;
-        color: #EEEEEE;
-    }
-
-    .question-box div.stButton > button:hover {
-        border-color: #FF5722;
-        background: #1B1B1B;
-        color: #FFFFFF;
-        transform: none;
-        box-shadow: none;
-    }
-
-
-    /* =========================
-       CHAT
-       ========================= */
-
-    .chat-header {
-        margin-top: 38px;
-        margin-bottom: 18px;
-        padding-top: 28px;
-        border-top: 1px solid #DDDDD9;
-    }
-
-    .chat-label {
-        margin-bottom: 6px;
-        color: #FF5722;
-        font-size: 10px;
-        font-weight: 900;
-        letter-spacing: 0.15em;
-    }
-
-    .chat-title {
-        color: #111111;
-        font-size: 25px;
-        font-weight: 900;
-        letter-spacing: -0.05em;
-    }
-
-    [data-testid="stChatMessage"] {
-        background: transparent;
-        border: none;
-        padding-top: 10px;
-        padding-bottom: 10px;
-    }
-
-    [data-testid="stChatMessageContent"] {
-        font-size: 15px;
-        line-height: 1.8;
-    }
-
-    [data-testid="stChatInput"] textarea {
-        border: 1px solid #DDDDD9;
-        border-radius: 13px;
-        background: #FFFFFF;
-    }
-
-    [data-testid="stChatInput"] textarea:focus {
-        border-color: #FF5722;
-        box-shadow: 0 0 0 1px #FF5722;
-    }
-
-
-    /* =========================
-       FOOTER
-       ========================= */
-
-    .footer-line {
-        height: 1px;
-        margin-top: 60px;
-        margin-bottom: 15px;
-        background: #DDDDD9;
-    }
-
-    .footer-text {
-        color: #999999;
-        font-size: 9px;
-        font-weight: 800;
-        letter-spacing: 0.1em;
-    }
-
-
-    /* =========================
-       MOBILE
-       ========================= */
-
-    @media (max-width: 768px) {
+        .stApp {
+            background: #F4F4F2;
+            color: #111111;
+        }
 
         .block-container {
-            padding: 25px 18px 60px 18px;
+            max-width: 1180px;
+            padding-top: 48px;
+            padding-bottom: 80px;
         }
 
-        .brand-meta {
-            display: none;
+        #MainMenu {
+            visibility: hidden;
         }
 
-        .hero-box {
-            min-height: 390px;
-            padding: 35px 28px;
-            border-radius: 18px;
+        footer {
+            visibility: hidden;
+        }
+
+        header {
+            visibility: hidden;
+        }
+
+
+        /* ====================================================
+           TYPOGRAPHY
+        ==================================================== */
+
+        * {
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "Pretendard",
+                "Noto Sans KR",
+                "Segoe UI",
+                sans-serif;
+        }
+
+
+        /* ====================================================
+           TOP BRAND
+        ==================================================== */
+
+        .top-brand {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 22px;
+        }
+
+        .brand-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-mark {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #111111;
+            position: relative;
+        }
+
+        .brand-mark::before {
+            content: "";
+            position: absolute;
+            width: 13px;
+            height: 23px;
+            border-right: 2px dashed #FF5722;
+            border-radius: 50%;
+            top: 3px;
+            left: 8px;
+            transform: rotate(-22deg);
+        }
+
+        .brand-name {
+            font-size: 14px;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            color: #111111;
+        }
+
+        .brand-right {
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            color: #888888;
+        }
+
+
+        /* ====================================================
+           HERO
+        ==================================================== */
+
+        .hero {
+            position: relative;
+            overflow: hidden;
+            background: #111111;
+            min-height: 360px;
+            border-radius: 24px;
+            padding: 48px 52px;
+            margin-bottom: 42px;
+        }
+
+        .hero::after {
+            content: "";
+            position: absolute;
+            width: 390px;
+            height: 390px;
+            border: 1px solid rgba(255, 87, 34, 0.30);
+            border-radius: 50%;
+            right: -95px;
+            top: -80px;
+        }
+
+        .hero::before {
+            content: "";
+            position: absolute;
+            width: 260px;
+            height: 260px;
+            border: 1px dashed rgba(255, 87, 34, 0.50);
+            border-radius: 50%;
+            right: -20px;
+            top: -20px;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 650px;
+        }
+
+        .hero-kicker {
+            display: inline-flex;
+            align-items: center;
+            background: #FF5722;
+            color: #FFFFFF;
+            border-radius: 999px;
+            padding: 8px 13px;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.12em;
+            margin-bottom: 24px;
         }
 
         .hero-title {
-            font-size: 48px;
+            font-size: clamp(48px, 6vw, 78px);
+            line-height: 0.98;
+            font-weight: 950;
+            letter-spacing: -0.065em;
+            color: #FFFFFF;
+            margin: 0;
+        }
+
+        .hero-title .orange {
+            color: #FF5722;
         }
 
         .hero-description {
-            max-width: 300px;
+            margin-top: 25px;
+            color: #A8A8A8;
+            font-size: 15px;
+            line-height: 1.7;
         }
 
-        .hero-year {
-            font-size: 80px;
-            right: 20px;
+        .hero-number {
+            position: absolute;
+            right: 46px;
+            bottom: 30px;
+            z-index: 2;
+            color: rgba(255,255,255,0.08);
+            font-size: 130px;
+            line-height: 1;
+            font-weight: 950;
+            letter-spacing: -0.08em;
         }
 
-        .hero-circle {
-            width: 280px;
-            height: 280px;
-        }
 
-        .hero-circle-small {
-            width: 180px;
-            height: 180px;
+        /* ====================================================
+           SECTION HEADER
+        ==================================================== */
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+            margin-bottom: 15px;
         }
 
         .section-title {
-            font-size: 21px;
+            font-size: 22px;
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            color: #111111;
         }
 
-        div.stButton > button {
-            min-height: 145px;
+        .section-label {
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.14em;
+            color: #999999;
+            margin-bottom: 5px;
         }
 
-        .question-box {
-            padding: 22px 18px;
+        .section-count {
+            font-size: 11px;
+            font-weight: 700;
+            color: #999999;
         }
-    }
 
-    </style>
-    """,
+
+        /* ====================================================
+           CATEGORY CARDS
+        ==================================================== */
+
+        .category-card {
+            position: relative;
+            min-height: 180px;
+            background: #FFFFFF;
+            border: 1px solid #E1E1DE;
+            border-radius: 18px;
+            padding: 25px;
+            margin-bottom: 14px;
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        .category-card::after {
+            content: "";
+            position: absolute;
+            width: 90px;
+            height: 90px;
+            border: 1px solid #EEEEEB;
+            border-radius: 50%;
+            right: -30px;
+            bottom: -30px;
+        }
+
+        .category-number {
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.12em;
+            color: #FF5722;
+            margin-bottom: 28px;
+        }
+
+        .category-title {
+            font-size: 22px;
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            color: #111111;
+            margin-bottom: 7px;
+        }
+
+        .category-description {
+            max-width: 300px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #888888;
+        }
+
+        .category-arrow {
+            position: absolute;
+            right: 23px;
+            top: 23px;
+            font-size: 20px;
+            color: #BBBBBB;
+        }
+
+
+        /* ====================================================
+           QUESTIONS
+        ==================================================== */
+
+        .questions-wrapper {
+            background: #111111;
+            border-radius: 20px;
+            padding: 27px;
+            margin-top: 32px;
+        }
+
+        .questions-wrapper .section-label {
+            color: #FF5722;
+        }
+
+        .questions-wrapper .section-title {
+            color: #FFFFFF;
+        }
+
+        .question-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 17px 0;
+            border-bottom: 1px solid #292929;
+        }
+
+        .question-item:last-child {
+            border-bottom: none;
+        }
+
+        .question-text {
+            color: #EEEEEE;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .question-arrow {
+            color: #FF5722;
+            font-size: 17px;
+        }
+
+
+        /* ====================================================
+           CLICKABLE CATEGORY CARDS
+
+           st.container(key="...") makes Streamlit add a
+           ".st-key-<key>" class to that container's wrapper
+           div. We use that to scope the "invisible button on
+           top of the card" trick to ONLY the category cards,
+           instead of applying it to every button in the app
+           (which is what broke the real chat buttons before).
+        ==================================================== */
+
+        [class*="st-key-card-"] {
+            position: relative;
+            cursor: pointer;
+        }
+
+        [class*="st-key-card-"]:hover .category-card {
+            border-color: #111111;
+            transform: translateY(-2px);
+        }
+
+        [class*="st-key-card-"] [data-testid="stButton"] {
+            position: absolute;
+            inset: 0;
+            margin: 0;
+            z-index: 5;
+        }
+
+        [class*="st-key-card-"] [data-testid="stButton"] button {
+            width: 100%;
+            height: 100%;
+            border-radius: 18px;
+            border: none;
+            background: transparent;
+            color: transparent;
+            box-shadow: none;
+            cursor: pointer;
+        }
+
+
+        /* ====================================================
+           GENERAL STREAMLIT BUTTONS (starter questions, etc.)
+        ==================================================== */
+
+        .stButton > button {
+            width: 100%;
+            border-radius: 14px;
+            border: 1px solid #E1E1DE;
+            background: #FFFFFF;
+            color: #111111;
+            font-weight: 700;
+            font-size: 14px;
+            padding: 14px 18px;
+            transition: all 0.2s ease;
+        }
+
+        .stButton > button:hover {
+            border-color: #FF5722;
+            color: #FF5722;
+        }
+
+
+        /* ====================================================
+           API KEY
+        ==================================================== */
+
+        .api-section {
+            background: #FFFFFF;
+            border: 1px solid #E1E1DE;
+            border-radius: 16px;
+            padding: 20px 22px;
+            margin-bottom: 35px;
+        }
+
+        .api-label {
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.13em;
+            color: #888888;
+            margin-bottom: 8px;
+        }
+
+        .api-description {
+            font-size: 12px;
+            color: #999999;
+            margin-bottom: 10px;
+        }
+
+
+        /* ====================================================
+           CHAT
+        ==================================================== */
+
+        .chat-section {
+            margin-top: 35px;
+        }
+
+        [data-testid="stChatMessage"] {
+            background: transparent;
+            border: none;
+            padding: 12px 0;
+        }
+
+        [data-testid="stChatMessageContent"] {
+            font-size: 15px;
+            line-height: 1.8;
+        }
+
+        [data-testid="stChatInput"] {
+            padding-top: 10px;
+        }
+
+        [data-testid="stChatInput"] textarea {
+            border: 1px solid #D8D8D5;
+            border-radius: 14px;
+            background: #FFFFFF;
+            font-size: 14px;
+        }
+
+        [data-testid="stChatInput"] textarea:focus {
+            border-color: #FF5722;
+            box-shadow: 0 0 0 1px #FF5722;
+        }
+
+
+        /* ====================================================
+           FOOTER
+        ==================================================== */
+
+        .footer {
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 1px solid #DDDDD9;
+            display: flex;
+            justify-content: space-between;
+            color: #AAAAAA;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+        }
+
+
+        /* ====================================================
+           MOBILE
+        ==================================================== */
+
+        @media (max-width: 768px) {
+
+            .block-container {
+                padding: 25px 18px 60px 18px;
+            }
+
+            .hero {
+                min-height: 330px;
+                padding: 32px 28px;
+                border-radius: 18px;
+            }
+
+            .hero-title {
+                font-size: 48px;
+            }
+
+            .hero-number {
+                font-size: 90px;
+                right: 20px;
+            }
+
+            .category-card {
+                min-height: 155px;
+            }
+
+            .footer {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+
+        </style>
+        """
+    ),
     unsafe_allow_html=True,
 )
 
@@ -452,78 +533,170 @@ st.markdown(
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-if "selected_question" not in st.session_state:
-    st.session_state.selected_question = None
+if "pending_question" not in st.session_state:
+    st.session_state.pending_question = None
 
 
 # ============================================================
-# 4. TOP BRAND
+# 4. CATEGORY DATA
+# (used to render the 4 category cards and the question each
+#  one asks the chatbot when clicked)
+# ============================================================
+
+CATEGORIES = [
+    {
+        "key": "rule",
+        "number": "01 / RULE",
+        "title": "야구 규칙",
+        "description": "스트라이크와 볼부터 아웃, 이닝, 포스 아웃과 태그 아웃까지",
+        "question": (
+            "야구의 기본 규칙인 스트라이크, 볼, 아웃, 이닝, "
+            "포스 아웃과 태그 아웃의 차이를 야구 초보자에게 쉽게 설명해줘."
+        ),
+    },
+    {
+        "key": "term",
+        "number": "02 / TERM",
+        "title": "야구 용어",
+        "description": "병살, 희생플라이, 도루, 야수선택 등 경기에서 자주 듣는 용어",
+        "question": (
+            "병살, 희생플라이, 도루, 야수선택처럼 경기에서 자주 나오는 "
+            "야구 용어들을 하나씩 쉽게 설명해줘."
+        ),
+    },
+    {
+        "key": "stats",
+        "number": "03 / STATS",
+        "title": "야구 기록",
+        "description": "타율, 출루율, 장타율, OPS, ERA, WHIP 등을 쉽게 이해하기",
+        "question": (
+            "타율, 출루율, 장타율, OPS, ERA, WHIP이 각각 무엇을 의미하는지 "
+            "야구 초보자에게 쉽게 설명해줘."
+        ),
+    },
+    {
+        "key": "situation",
+        "number": "04 / SITUATION",
+        "title": "경기 상황",
+        "description": "실제 경기에서 왜 이런 결과가 나왔는지 상황별로 하나씩 분석하기",
+        "question": (
+            "실제 경기에서 자주 나오는 상황을 하나 예로 들어서, 주자 위치와 "
+            "아웃 카운트에 따라 왜 그런 수비 결과가 나왔는지 분석하는 방법을 알려줘."
+        ),
+    },
+]
+
+
+def render_category_card(category):
+    """Render one category card with a real (visually hidden)
+    button overlaid on top of it, scoped via st.container(key=...)
+    so it doesn't affect any other button in the app."""
+
+    with st.container(key=f"card-{category['key']}"):
+
+        st.markdown(
+            dedent(
+                f"""
+                <div class="category-card">
+                    <div class="category-number">{category['number']}</div>
+                    <div class="category-title">{category['title']}</div>
+                    <div class="category-description">
+                        {category['description']}
+                    </div>
+                    <div class="category-arrow">↗</div>
+                </div>
+                """
+            ),
+            unsafe_allow_html=True,
+        )
+
+        if st.button(category["title"], key=f"card-btn-{category['key']}"):
+            # Overwrite (not append) so only the most recently
+            # clicked category is queued up.
+            st.session_state.messages = [
+                {"role": "user", "content": category["question"]}
+            ]
+            st.session_state.pending_question = True
+            st.rerun()
+
+
+# ============================================================
+# 5. TOP BRAND
 # ============================================================
 
 st.markdown(
-    """
-    <div class="brand-row">
-        <div class="brand-name">
-            <span class="brand-dot"></span>
-            KBO BASEBALL
-        </div>
+    dedent(
+        """
+        <div class="top-brand">
+            <div class="brand-left">
+                <div class="brand-mark"></div>
+                <div class="brand-name">KBO BASEBALL</div>
+            </div>
 
-        <div class="brand-meta">
-            AI BASEBALL LEARNING
+            <div class="brand-right">
+                AI BASEBALL LEARNING
+            </div>
         </div>
-    </div>
-    """,
+        """
+    ),
     unsafe_allow_html=True,
 )
 
 
 # ============================================================
-# 5. HERO
+# 6. HERO
 # ============================================================
 
 st.markdown(
-    """
-    <div class="hero-box">
+    dedent(
+        """
+        <div class="hero">
 
-        <div class="hero-kicker">
-            KBO BASEBALL LEARNING
+            <div class="hero-content">
+
+                <div class="hero-kicker">
+                    KBO BASEBALL LEARNING
+                </div>
+
+                <div class="hero-title">
+                    야구를 보다,<br>
+                    <span class="orange">이해하다.</span>
+                </div>
+
+                <div class="hero-description">
+                    야구가 처음이어도 괜찮아요.<br>
+                    KBO의 규칙, 용어, 기록과 경기 상황을
+                    AI와 함께 하나씩 배워보세요.
+                </div>
+
+            </div>
+
+            <div class="hero-number">
+                09
+            </div>
+
         </div>
-
-        <div class="hero-title">
-            야구를 보다,<br>
-            <span class="hero-orange">이해하다.</span>
-        </div>
-
-        <div class="hero-description">
-            야구가 처음이어도 괜찮아요.<br>
-            KBO의 규칙, 용어, 기록과 경기 상황을<br>
-            AI와 함께 하나씩 배워보세요.
-        </div>
-
-        <div class="hero-year">
-            26
-        </div>
-
-        <div class="hero-circle"></div>
-        <div class="hero-circle-small"></div>
-
-    </div>
-    """,
+        """
+    ),
     unsafe_allow_html=True,
 )
 
 
 # ============================================================
-# 6. API KEY
+# 7. API KEY AREA
 # ============================================================
 
 st.markdown(
-    '<div class="api-label">OPENAI API KEY</div>',
-    unsafe_allow_html=True,
-)
-
-st.markdown(
-    '<div class="api-description">API Key를 입력하면 야구 학습 챗봇을 사용할 수 있습니다.</div>',
+    dedent(
+        """
+        <div class="api-section">
+            <div class="api-label">OPENAI API KEY</div>
+            <div class="api-description">
+                API Key를 입력하면 야구 학습 챗봇을 사용할 수 있습니다.
+            </div>
+        </div>
+        """
+    ),
     unsafe_allow_html=True,
 )
 
@@ -534,75 +707,106 @@ openai_api_key = st.text_input(
     label_visibility="collapsed",
 )
 
+if st.session_state.pending_question and not openai_api_key:
+    st.info("질문이 준비됐어요! 위에 API Key를 입력하면 바로 답변해 드릴게요.")
+
 
 # ============================================================
-# 7. API KEY가 없을 때
+# 8. API KEY 없을 때
 # ============================================================
 
 if not openai_api_key:
 
     st.markdown(
-        """
-        <div class="section-row">
-            <div>
-                <div class="section-label">START HERE</div>
-                <div class="section-title">무엇부터 배워볼까요?</div>
-            </div>
+        dedent(
+            """
+            <div class="section-header">
+                <div>
+                    <div class="section-label">START HERE</div>
+                    <div class="section-title">무엇부터 배워볼까요?</div>
+                </div>
 
-            <div class="section-count">
-                04 CATEGORIES
+                <div class="section-count">
+                    04 CATEGORIES
+                </div>
             </div>
-        </div>
-        """,
+            """
+        ),
         unsafe_allow_html=True,
     )
 
     col1, col2 = st.columns(2)
 
     with col1:
-        st.button(
-            "01 / RULE\n\n야구 규칙\n\n스트라이크, 볼, 아웃부터 포스 아웃과 태그 아웃까지",
-            disabled=True,
-            key="rule_disabled",
-        )
+        render_category_card(CATEGORIES[0])
 
     with col2:
-        st.button(
-            "02 / TERM\n\n야구 용어\n\n병살, 희생플라이, 도루 등 경기에서 자주 듣는 용어",
-            disabled=True,
-            key="term_disabled",
-        )
+        render_category_card(CATEGORIES[1])
 
     col3, col4 = st.columns(2)
 
     with col3:
-        st.button(
-            "03 / STATS\n\n야구 기록\n\n타율, 출루율, 장타율, OPS, ERA, WHIP 이해하기",
-            disabled=True,
-            key="stats_disabled",
-        )
+        render_category_card(CATEGORIES[2])
 
     with col4:
-        st.button(
-            "04 / SITUATION\n\n경기 상황\n\n실제 경기 장면을 통해 플레이의 결과 이해하기",
-            disabled=True,
-            key="situation_disabled",
-        )
+        render_category_card(CATEGORIES[3])
 
     st.markdown(
-        """
-        <div class="question-box">
+        dedent(
+            """
+            <div class="questions-wrapper">
 
-            <div class="question-label">
-                POPULAR QUESTIONS
+                <div class="section-label">
+                    POPULAR QUESTIONS
+                </div>
+
+                <div class="section-title">
+                    이런 것부터 물어보세요.
+                </div>
+
+                <div class="question-item">
+                    <div class="question-text">
+                        스트라이크와 볼은 뭐가 달라?
+                    </div>
+                    <div class="question-arrow">→</div>
+                </div>
+
+                <div class="question-item">
+                    <div class="question-text">
+                        병살은 어떻게 만들어져?
+                    </div>
+                    <div class="question-arrow">→</div>
+                </div>
+
+                <div class="question-item">
+                    <div class="question-text">
+                        OPS가 높으면 좋은 선수야?
+                    </div>
+                    <div class="question-arrow">→</div>
+                </div>
+
+                <div class="question-item">
+                    <div class="question-text">
+                        포스 아웃과 태그 아웃의 차이는?
+                    </div>
+                    <div class="question-arrow">→</div>
+                </div>
+
             </div>
+            """
+        ),
+        unsafe_allow_html=True,
+    )
 
-            <div class="question-title">
-                API Key를 입력하고 시작해보세요.
+    st.markdown(
+        dedent(
+            """
+            <div class="footer">
+                <div>KBO BASEBALL LEARNING</div>
+                <div>AI BASEBALL ASSISTANT</div>
             </div>
-
-        </div>
-        """,
+            """
+        ),
         unsafe_allow_html=True,
     )
 
@@ -610,7 +814,7 @@ if not openai_api_key:
 
 
 # ============================================================
-# 8. OPENAI CLIENT
+# 9. OPENAI CLIENT
 # ============================================================
 
 client = OpenAI(
@@ -619,7 +823,7 @@ client = OpenAI(
 
 
 # ============================================================
-# 9. SYSTEM PROMPT
+# 10. SYSTEM PROMPT
 # ============================================================
 
 system_prompt = """
@@ -630,14 +834,20 @@ system_prompt = """
 전문적인 야구 용어를 사용할 경우 반드시
 쉬운 말로 풀어서 설명해주세요.
 
-주요 영역은 다음 네 가지입니다.
+
+[주요 역할]
+
+다음 네 가지 영역을 중심으로 설명합니다.
 
 1. 야구 규칙
 2. 야구 용어
 3. 야구 기록
 4. 경기 상황
 
-개념을 설명할 때 가능하면 다음 순서로 설명합니다.
+
+[답변 방식]
+
+개념을 설명할 때 가능하면 다음 순서를 사용합니다.
 
 ① 한 줄 정의
 ② 쉽게 풀어서 설명
@@ -646,30 +856,47 @@ system_prompt = """
 ⑤ 비슷한 개념과 비교
 
 단순한 사전식 정의로 끝내지 말고
-사용자가 실제 KBO 경기를 볼 때
+사용자가 실제 야구 경기를 볼 때
 이해할 수 있도록 설명해주세요.
 
-야구 초보자가 이해하기 어려운 전문 용어를
-연속해서 사용하지 마세요.
+
+[초보자 배려]
+
+야구를 처음 보는 사람도 이해할 수 있도록
+전문 용어를 연속해서 사용하지 마세요.
 
 사용자가 잘못 이해하고 있다면
 부드럽게 교정해주세요.
 
-야구 규칙에서는
+예:
+"거의 맞아요. 다만 한 가지 중요한 차이가 있어요."
+와 같은 방식으로 설명합니다.
+
+
+[야구 규칙]
+
 스트라이크, 볼, 아웃, 이닝,
 포스 아웃, 태그 아웃, 병살,
 희생플라이, 희생번트, 도루,
 인필드 플라이, 야수선택 등을
 실제 경기 상황과 연결해서 설명합니다.
 
-야구 기록에서는
+
+[야구 기록]
+
 타율, 출루율, 장타율, OPS,
 ERA, WHIP, 승리, 세이브 등의 기록을
 공식만 설명하지 말고
 그 숫자가 실제 경기에서 무엇을 의미하는지
 설명해주세요.
 
-경기 상황 질문을 받으면 다음 순서로 분석합니다.
+필요하다면 표를 사용해서
+비슷한 기록을 비교해주세요.
+
+
+[경기 상황 분석]
+
+사용자가 경기 상황을 설명하면 다음 순서로 분석합니다.
 
 상황
 → 주자 위치
@@ -679,21 +906,45 @@ ERA, WHIP, 승리, 세이브 등의 기록을
 → 주자 행동
 → 결과
 
+그리고 왜 그런 결과가 발생했는지 설명해주세요.
+
+
+[KBO]
+
 KBO 리그 관련 질문에서는
 KBO 리그의 맥락을 우선해서 설명해주세요.
 
+다른 리그와 규칙이 다를 수 있다면
+어느 리그 기준인지 구분해서 설명해주세요.
+
+
+[최신 정보]
+
 현재 시즌 선수 기록,
 오늘 경기 결과,
-현재 순위 등 실시간 정보가 필요한 경우
-최신 데이터가 제공되지 않았다면 추측하지 마세요.
+현재 순위,
+최신 규정 등 실시간 정보가 필요한 경우
+확인할 수 있는 최신 데이터가 제공되지 않았다면
+추측하지 마세요.
 
-친절하고 차분하게,
-야구를 같이 보면서 알려주는 친구처럼 설명해주세요.
+확실하지 않은 정보는
+확실하지 않다고 알려주세요.
+
+
+[말투]
+
+친절하고 차분하게 설명해주세요.
+
+야구를 잘 모르는 사람이 질문하는 것을
+부끄럽게 느끼지 않도록 편안하게 설명해주세요.
+
+"야구를 같이 보면서 알려주는 친구"처럼
+설명해주세요.
 """
 
 
 # ============================================================
-# 10. RESPONSE FUNCTION
+# 11. RESPONSE FUNCTION
 # ============================================================
 
 def get_response():
@@ -705,31 +956,79 @@ def get_response():
                 "role": "system",
                 "content": system_prompt,
             },
-            *st.session_state.messages,
+            *[
+                {
+                    "role": message["role"],
+                    "content": message["content"],
+                }
+                for message in st.session_state.messages
+            ],
         ],
         stream=True,
     )
 
 
 # ============================================================
-# 11. STARTER QUESTIONS
+# 12. CONVERSATION
+# ============================================================
+
+if st.session_state.messages:
+
+    st.markdown(
+        dedent(
+            """
+            <div class="chat-section">
+
+                <div class="section-header">
+                    <div>
+                        <div class="section-label">
+                            CONVERSATION
+                        </div>
+
+                        <div class="section-title">
+                            야구를 함께 알아볼게요.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            """
+        ),
+        unsafe_allow_html=True,
+    )
+
+    for message in st.session_state.messages:
+
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+
+# ============================================================
+# 13. STARTER QUESTIONS
 # ============================================================
 
 if not st.session_state.messages:
 
     st.markdown(
-        """
-        <div class="section-row">
-            <div>
-                <div class="section-label">START WITH A QUESTION</div>
-                <div class="section-title">궁금한 것부터 시작하세요.</div>
-            </div>
+        dedent(
+            """
+            <div class="section-header">
+                <div>
+                    <div class="section-label">
+                        START WITH A QUESTION
+                    </div>
 
-            <div class="section-count">
-                BEGINNER
+                    <div class="section-title">
+                        궁금한 것부터 시작하세요.
+                    </div>
+                </div>
+
+                <div class="section-count">
+                    BEGINNER
+                </div>
             </div>
-        </div>
-        """,
+            """
+        ),
         unsafe_allow_html=True,
     )
 
@@ -739,67 +1038,97 @@ if not st.session_state.messages:
 
         if st.button(
             "스트라이크와 볼은 뭐가 달라?",
-            key="starter_strike",
+            key="starter_rule",
         ):
-            st.session_state.selected_question = (
-                "스트라이크와 볼은 무엇이 다른지 "
-                "야구를 처음 보는 사람도 이해할 수 있게 설명해줘."
-            )
-            st.rerun()
 
-        if st.button(
-            "병살은 어떻게 만들어져?",
-            key="starter_double_play",
-        ):
-            st.session_state.selected_question = (
-                "야구에서 병살이 무엇인지 설명해줘. "
-                "1루에 주자가 있고 타자가 땅볼을 쳤을 때를 예로 들어줘."
+            st.session_state.messages.append(
+                {
+                    "role": "user",
+                    "content": (
+                        "야구에서 스트라이크와 볼은 "
+                        "정확히 무엇이 다른지 야구 초보자에게 "
+                        "쉽게 설명해줘."
+                    ),
+                }
             )
+
+            st.session_state.pending_question = True
             st.rerun()
 
     with col2:
 
         if st.button(
+            "병살은 어떻게 만들어져?",
+            key="starter_double_play",
+        ):
+
+            st.session_state.messages.append(
+                {
+                    "role": "user",
+                    "content": (
+                        "야구에서 병살이 무엇인지 설명해줘. "
+                        "1루에 주자가 있는 상황에서 타자가 "
+                        "땅볼을 쳤을 때를 예로 들어줘."
+                    ),
+                }
+            )
+
+            st.session_state.pending_question = True
+            st.rerun()
+
+    col3, col4 = st.columns(2)
+
+    with col3:
+
+        if st.button(
             "OPS가 높으면 좋은 선수야?",
             key="starter_ops",
         ):
-            st.session_state.selected_question = (
-                "OPS가 무엇인지 설명해줘. "
-                "OPS가 높다는 것이 타자에게 어떤 의미인지 "
-                "실제 야구를 볼 때 이해할 수 있도록 설명해줘."
+
+            st.session_state.messages.append(
+                {
+                    "role": "user",
+                    "content": (
+                        "야구에서 OPS가 무엇인지 설명해줘. "
+                        "OPS가 높다는 것이 실제 경기에서 "
+                        "어떤 의미인지 야구 초보자에게 알려줘."
+                    ),
+                }
             )
+
+            st.session_state.pending_question = True
             st.rerun()
+
+    with col4:
 
         if st.button(
             "포스 아웃과 태그 아웃의 차이는?",
             key="starter_out",
         ):
-            st.session_state.selected_question = (
-                "포스 아웃과 태그 아웃의 차이를 "
-                "실제 경기 상황을 예로 들어서 쉽게 설명해줘."
+
+            st.session_state.messages.append(
+                {
+                    "role": "user",
+                    "content": (
+                        "포스 아웃과 태그 아웃의 차이를 "
+                        "실제 경기 상황을 예로 들어서 설명해줘."
+                    ),
+                }
             )
+
+            st.session_state.pending_question = True
             st.rerun()
 
 
 # ============================================================
-# 12. SELECTED STARTER QUESTION
+# 14. STARTER QUESTION RESPONSE
 # ============================================================
 
-if st.session_state.selected_question:
-
-    question = st.session_state.selected_question
-
-    st.session_state.selected_question = None
-
-    st.session_state.messages.append(
-        {
-            "role": "user",
-            "content": question,
-        }
-    )
-
-    with st.chat_message("user"):
-        st.markdown(question)
+if (
+    st.session_state.pending_question
+    and st.session_state.messages
+    and st.session_state.messages[-1]["role"] == "user"
+):
 
     with st.chat_message("assistant"):
 
@@ -814,45 +1143,16 @@ if st.session_state.selected_question:
         }
     )
 
-    st.rerun()
+    st.session_state.pending_question = None
 
 
 # ============================================================
-# 13. EXISTING CONVERSATION
+# 15. FREE QUESTION
 # ============================================================
 
-if st.session_state.messages:
-
-    st.markdown(
-        """
-        <div class="chat-header">
-            <div class="chat-label">
-                CONVERSATION
-            </div>
-
-            <div class="chat-title">
-                야구를 함께 알아볼게요.
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    for message in st.session_state.messages:
-
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
-
-
-# ============================================================
-# 14. FREE CHAT
-# ============================================================
-
-prompt = st.chat_input(
+if prompt := st.chat_input(
     "야구에 대해 궁금한 것을 물어보세요..."
-)
-
-if prompt:
+):
 
     st.session_state.messages.append(
         {
@@ -879,24 +1179,17 @@ if prompt:
 
 
 # ============================================================
-# 15. FOOTER
+# 16. FOOTER
 # ============================================================
 
 st.markdown(
-    '<div class="footer-line"></div>',
+    dedent(
+        """
+        <div class="footer">
+            <div>KBO BASEBALL LEARNING</div>
+            <div>RULE · TERM · STATS · SITUATION</div>
+        </div>
+        """
+    ),
     unsafe_allow_html=True,
 )
-
-footer_left, footer_right = st.columns(2)
-
-with footer_left:
-    st.markdown(
-        '<div class="footer-text">KBO BASEBALL LEARNING</div>',
-        unsafe_allow_html=True,
-    )
-
-with footer_right:
-    st.markdown(
-        '<div class="footer-text" style="text-align:right;">RULE · TERM · STATS · SITUATION</div>',
-        unsafe_allow_html=True,
-    )
