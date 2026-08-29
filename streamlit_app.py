@@ -19,7 +19,7 @@ st.set_page_config(
 # 2. DESIGN SYSTEM
 # ============================================================
 
-st.markdown(
+st.html(
     dedent(
         """
         <style>
@@ -521,8 +521,7 @@ st.markdown(
 
         </style>
         """
-    ),
-    unsafe_allow_html=True,
+    )
 )
 
 
@@ -594,7 +593,7 @@ def render_category_card(category):
 
     with st.container(key=f"card-{category['key']}"):
 
-        st.markdown(
+        st.html(
             dedent(
                 f"""
                 <div class="category-card">
@@ -606,8 +605,7 @@ def render_category_card(category):
                     <div class="category-arrow">↗</div>
                 </div>
                 """
-            ),
-            unsafe_allow_html=True,
+            )
         )
 
         if st.button(category["title"], key=f"card-btn-{category['key']}"):
@@ -624,7 +622,7 @@ def render_category_card(category):
 # 5. TOP BRAND
 # ============================================================
 
-st.markdown(
+st.html(
     dedent(
         """
         <div class="top-brand">
@@ -638,8 +636,7 @@ st.markdown(
             </div>
         </div>
         """
-    ),
-    unsafe_allow_html=True,
+    )
 )
 
 
@@ -647,7 +644,7 @@ st.markdown(
 # 6. HERO
 # ============================================================
 
-st.markdown(
+st.html(
     dedent(
         """
         <div class="hero">
@@ -677,8 +674,7 @@ st.markdown(
 
         </div>
         """
-    ),
-    unsafe_allow_html=True,
+    )
 )
 
 
@@ -686,7 +682,7 @@ st.markdown(
 # 7. API KEY AREA
 # ============================================================
 
-st.markdown(
+st.html(
     dedent(
         """
         <div class="api-section">
@@ -696,8 +692,7 @@ st.markdown(
             </div>
         </div>
         """
-    ),
-    unsafe_allow_html=True,
+    )
 )
 
 openai_api_key = st.text_input(
@@ -717,7 +712,7 @@ if st.session_state.pending_question and not openai_api_key:
 
 if not openai_api_key:
 
-    st.markdown(
+    st.html(
         dedent(
             """
             <div class="section-header">
@@ -731,8 +726,7 @@ if not openai_api_key:
                 </div>
             </div>
             """
-        ),
-        unsafe_allow_html=True,
+        )
     )
 
     col1, col2 = st.columns(2)
@@ -751,7 +745,7 @@ if not openai_api_key:
     with col4:
         render_category_card(CATEGORIES[3])
 
-    st.markdown(
+    st.html(
         dedent(
             """
             <div class="questions-wrapper">
@@ -794,11 +788,10 @@ if not openai_api_key:
 
             </div>
             """
-        ),
-        unsafe_allow_html=True,
+        )
     )
 
-    st.markdown(
+    st.html(
         dedent(
             """
             <div class="footer">
@@ -806,8 +799,7 @@ if not openai_api_key:
                 <div>AI BASEBALL ASSISTANT</div>
             </div>
             """
-        ),
-        unsafe_allow_html=True,
+        )
     )
 
     st.stop()
@@ -974,7 +966,7 @@ def get_response():
 
 if st.session_state.messages:
 
-    st.markdown(
+    st.html(
         dedent(
             """
             <div class="chat-section">
@@ -993,8 +985,7 @@ if st.session_state.messages:
 
             </div>
             """
-        ),
-        unsafe_allow_html=True,
+        )
     )
 
     for message in st.session_state.messages:
@@ -1009,7 +1000,7 @@ if st.session_state.messages:
 
 if not st.session_state.messages:
 
-    st.markdown(
+    st.html(
         dedent(
             """
             <div class="section-header">
@@ -1028,8 +1019,7 @@ if not st.session_state.messages:
                 </div>
             </div>
             """
-        ),
-        unsafe_allow_html=True,
+        )
     )
 
     col1, col2 = st.columns(2)
@@ -1182,7 +1172,7 @@ if prompt := st.chat_input(
 # 16. FOOTER
 # ============================================================
 
-st.markdown(
+st.html(
     dedent(
         """
         <div class="footer">
@@ -1190,6 +1180,5 @@ st.markdown(
             <div>RULE · TERM · STATS · SITUATION</div>
         </div>
         """
-    ),
-    unsafe_allow_html=True,
+    )
 )
