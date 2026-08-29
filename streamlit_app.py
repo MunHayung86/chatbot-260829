@@ -347,10 +347,14 @@ st.markdown(
 
            st.container(key="...") makes Streamlit add a
            ".st-key-<key>" class to that container's wrapper
-           div. We use that to scope the "invisible button on
-           top of the card" trick to ONLY the category cards,
-           instead of applying it to every button in the app
-           (which is what broke the real chat buttons before).
+           div. The outer "card-*" container just needs to be
+           a positioning + hover context. The INNER
+           "card-overlay-*" container is the one that actually
+           gets turned into an invisible button on top of the
+           card -- kept separate from the outer container so
+           that the "more info" button that appears after a
+           card is expanded (a normal, visible button) is NOT
+           accidentally made invisible too.
         ==================================================== */
 
         [class*="st-key-card-"] {
@@ -363,14 +367,14 @@ st.markdown(
             transform: translateY(-2px);
         }
 
-        [class*="st-key-card-"] [data-testid="stButton"] {
+        [class*="st-key-card-overlay-"] {
             position: absolute;
             inset: 0;
             margin: 0;
             z-index: 5;
         }
 
-        [class*="st-key-card-"] [data-testid="stButton"] button {
+        [class*="st-key-card-overlay-"] [data-testid="stButton"] button {
             width: 100%;
             height: 100%;
             border-radius: 18px;
@@ -379,6 +383,93 @@ st.markdown(
             color: transparent;
             box-shadow: none;
             cursor: pointer;
+        }
+
+
+        /* ====================================================
+           CATEGORY SUMMARY PREVIEW
+           (shown instantly when a card is clicked, no API
+           call needed)
+        ==================================================== */
+
+        @keyframes summaryFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-6px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .category-summary {
+            background: #FFFFFF;
+            border: 1px solid #E1E1DE;
+            border-left: 4px solid #FF5722;
+            border-radius: 4px 16px 16px 4px;
+            padding: 18px 20px;
+            margin-top: -6px;
+            margin-bottom: 14px;
+            animation: summaryFadeIn 0.2s ease;
+        }
+
+        .category-summary-label {
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.12em;
+            color: #FF5722;
+            margin-bottom: 8px;
+        }
+
+        .category-summary-text {
+            font-size: 13px;
+            line-height: 1.75;
+            color: #333333;
+        }
+
+
+        /* ====================================================
+           TEAM PICKER
+        ==================================================== */
+
+        .team-section {
+            background: #FFFFFF;
+            border: 1px solid #E1E1DE;
+            border-radius: 16px;
+            padding: 20px 22px;
+            margin-bottom: 24px;
+        }
+
+        .team-label {
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.13em;
+            color: #888888;
+            margin-bottom: 8px;
+        }
+
+        .team-description {
+            font-size: 12px;
+            color: #999999;
+            margin-bottom: 14px;
+        }
+
+        .team-selected-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 999px;
+            padding: 5px 14px;
+            font-size: 11px;
+            font-weight: 800;
+            margin-bottom: 14px;
+        }
+
+        [class*="st-key-team-"] button {
+            border-radius: 999px !important;
+            padding: 8px 6px !important;
+            font-size: 12px !important;
         }
 
 
@@ -536,11 +627,18 @@ if "messages" not in st.session_state:
 if "pending_question" not in st.session_state:
     st.session_state.pending_question = None
 
+if "expanded_category" not in st.session_state:
+    st.session_state.expanded_category = None
+
+if "favorite_team" not in st.session_state:
+    st.session_state.favorite_team = None
+
 
 # ============================================================
 # 4. CATEGORY DATA
-# (used to render the 4 category cards and the question each
-#  one asks the chatbot when clicked)
+# (used to render the 4 category cards: "summary" is shown
+#  instantly with no API call, "question" is only sent to the
+#  chatbot if the user asks for more)
 # ============================================================
 
 CATEGORIES = [
@@ -549,6 +647,11 @@ CATEGORIES = [
         "number": "01 / RULE",
         "title": "야구 규칙",
         "description": "스트라이크와 볼부터 아웃, 이닝, 포스 아웃과 태그 아웃까지",
+        "summary": (
+            "스트라이크는 타자가 쳐야 할 좋은 공, 볼은 벗어난 공이에요. "
+            "스트라이크 3개면 삼진 아웃, 볼 4개면 타자가 1루로 걸어나가는 "
+            "볼넷이 됩니다. 아웃을 3번 잡으면 그 팀의 공격(이닝)이 끝나요."
+        ),
         "question": (
             "야구의 기본 규칙인 스트라이크, 볼, 아웃, 이닝, "
             "포스 아웃과 태그 아웃의 차이를 야구 초보자에게 쉽게 설명해줘."
@@ -559,6 +662,11 @@ CATEGORIES = [
         "number": "02 / TERM",
         "title": "야구 용어",
         "description": "병살, 희생플라이, 도루, 야수선택 등 경기에서 자주 듣는 용어",
+        "summary": (
+            "병살은 타자와 주자 두 명을 한 번에 아웃시키는 것, 도루는 주자가 "
+            "다음 베이스로 몰래 뛰어가는 것을 말해요. 중계에서 자주 나오는 "
+            "이런 용어들을 알면 경기 흐름이 훨씬 잘 읽힙니다."
+        ),
         "question": (
             "병살, 희생플라이, 도루, 야수선택처럼 경기에서 자주 나오는 "
             "야구 용어들을 하나씩 쉽게 설명해줘."
@@ -569,6 +677,11 @@ CATEGORIES = [
         "number": "03 / STATS",
         "title": "야구 기록",
         "description": "타율, 출루율, 장타율, OPS, ERA, WHIP 등을 쉽게 이해하기",
+        "summary": (
+            "타율은 타석에서 안타를 칠 확률, OPS는 출루율과 장타율을 더한 "
+            "값으로 타자의 전체적인 공격력을 보여줘요. ERA는 투수가 9이닝 "
+            "동안 내주는 평균 실점으로, 낮을수록 좋은 투수라는 뜻입니다."
+        ),
         "question": (
             "타율, 출루율, 장타율, OPS, ERA, WHIP이 각각 무엇을 의미하는지 "
             "야구 초보자에게 쉽게 설명해줘."
@@ -579,6 +692,12 @@ CATEGORIES = [
         "number": "04 / SITUATION",
         "title": "경기 상황",
         "description": "실제 경기에서 왜 이런 결과가 나왔는지 상황별로 하나씩 분석하기",
+        "summary": (
+            "주자 위치, 아웃 카운트, 타구 방향에 따라 수비 팀의 선택이 "
+            "달라져요. 예를 들어 1루에 주자가 있고 무사 상황이면 병살을 "
+            "노리는 수비가 자주 나옵니다. 상황을 하나씩 뜯어보면 왜 그런 "
+            "결과가 나왔는지 보이기 시작해요."
+        ),
         "question": (
             "실제 경기에서 자주 나오는 상황을 하나 예로 들어서, 주자 위치와 "
             "아웃 카운트에 따라 왜 그런 수비 결과가 나왔는지 분석하는 방법을 알려줘."
@@ -588,11 +707,19 @@ CATEGORIES = [
 
 
 def render_category_card(category):
-    """Render one category card with a real (visually hidden)
-    button overlaid on top of it, scoped via st.container(key=...)
-    so it doesn't affect any other button in the app."""
+    """Render one category card.
 
-    with st.container(key=f"card-{category['key']}"):
+    The card itself has a real (visually hidden) button overlaid
+    on top of it, scoped via a nested st.container(key=...) so it
+    doesn't affect any other button in the app. Clicking it just
+    toggles a free, instant text summary open/closed -- no API
+    call. Only the extra "챗봇에게 더 물어보기" button inside the
+    summary actually sends a question to the chatbot.
+    """
+
+    key = category["key"]
+
+    with st.container(key=f"card-{key}"):
 
         st.html(
             dedent(
@@ -609,14 +736,171 @@ def render_category_card(category):
             )
         )
 
-        if st.button(category["title"], key=f"card-btn-{category['key']}"):
-            # Overwrite (not append) so only the most recently
-            # clicked category is queued up.
-            st.session_state.messages = [
-                {"role": "user", "content": category["question"]}
-            ]
-            st.session_state.pending_question = True
-            st.rerun()
+        with st.container(key=f"card-overlay-{key}"):
+            toggled = st.button(category["title"], key=f"card-btn-{key}")
+
+        if toggled:
+            if st.session_state.expanded_category == key:
+                st.session_state.expanded_category = None
+            else:
+                st.session_state.expanded_category = key
+
+        if st.session_state.expanded_category == key:
+
+            st.html(
+                dedent(
+                    f"""
+                    <div class="category-summary">
+                        <div class="category-summary-label">{category['number']}</div>
+                        <div class="category-summary-text">{category['summary']}</div>
+                    </div>
+                    """
+                )
+            )
+
+            if st.button(
+                "챗봇에게 더 물어보기",
+                key=f"card-ask-{key}",
+                use_container_width=True,
+            ):
+                # Overwrite (not append) so only the most recently
+                # asked category is queued up.
+                st.session_state.messages = [
+                    {"role": "user", "content": category["question"]}
+                ]
+                st.session_state.pending_question = True
+                st.rerun()
+
+
+# ============================================================
+# 4B. TEAM DATA
+# (used for the optional "응원팀" picker; the selected team
+#  both personalizes the chatbot's answers and re-colors the
+#  page's accent color)
+# ============================================================
+
+TEAMS = [
+    {"key": "doosan", "name": "두산 베어스", "color": "#131230"},
+    {"key": "lg", "name": "LG 트윈스", "color": "#C30452"},
+    {"key": "kt", "name": "KT 위즈", "color": "#EB1C24"},
+    {"key": "ssg", "name": "SSG 랜더스", "color": "#CE0E2D"},
+    {"key": "nc", "name": "NC 다이노스", "color": "#315288"},
+    {"key": "lotte", "name": "롯데 자이언츠", "color": "#041E42"},
+    {"key": "samsung", "name": "삼성 라이온즈", "color": "#074CA1"},
+    {"key": "hanwha", "name": "한화 이글스", "color": "#FF6600"},
+    {"key": "kia", "name": "KIA 타이거즈", "color": "#EA0029"},
+    {"key": "kiwoom", "name": "키움 히어로즈", "color": "#570514"},
+]
+
+TEAMS_BY_KEY = {t["key"]: t for t in TEAMS}
+
+
+def render_team_picker():
+    """Optional team picker. Selecting a team both nudges the
+    chatbot to use that team's examples, and re-colors the
+    page's orange accent to match the team."""
+
+    st.html(
+        dedent(
+            """
+            <div class="team-section">
+                <div class="team-label">MY TEAM (선택)</div>
+                <div class="team-description">
+                    응원하는 팀을 고르면 그 팀 이야기를 곁들여서 설명해 드려요.
+                </div>
+            </div>
+            """
+        )
+    )
+
+    selected = st.session_state.favorite_team
+
+    if selected:
+        team = TEAMS_BY_KEY[selected]
+        st.html(
+            dedent(
+                f"""
+                <div class="team-selected-tag"
+                     style="background:{team['color']}22;color:{team['color']};">
+                    ⚾ {team['name']} 팬으로 설정됨
+                </div>
+                """
+            )
+        )
+
+    cols = st.columns(5)
+
+    for i, team in enumerate(TEAMS):
+        with cols[i % 5]:
+            with st.container(key=f"team-{team['key']}"):
+                if st.button(team["name"], key=f"team-btn-{team['key']}"):
+                    if st.session_state.favorite_team == team["key"]:
+                        st.session_state.favorite_team = None
+                    else:
+                        st.session_state.favorite_team = team["key"]
+                    st.rerun()
+
+    # Give every team chip its own outline color, and fill in
+    # the currently-selected one solid.
+    chip_rules = []
+
+    for team in TEAMS:
+        chip_rules.append(
+            f'[class*="st-key-team-{team["key"]}"] button '
+            f'{{ border-color: {team["color"]}; color: {team["color"]}; }}'
+        )
+
+    if selected:
+        team = TEAMS_BY_KEY[selected]
+        chip_rules.append(
+            f'[class*="st-key-team-{team["key"]}"] button {{ '
+            f'background: {team["color"]} !important; '
+            f'color: #FFFFFF !important; }}'
+        )
+
+    st.markdown(
+        f"<style>{' '.join(chip_rules)}</style>",
+        unsafe_allow_html=True,
+    )
+
+    # If a team is selected, retheme the site's orange accent
+    # color to that team's color.
+    if selected:
+        team = TEAMS_BY_KEY[selected]
+        st.markdown(
+            dedent(
+                f"""
+                <style>
+                .hero-kicker {{
+                    background: {team['color']} !important;
+                }}
+                .hero-title .orange {{
+                    color: {team['color']} !important;
+                }}
+                .category-number {{
+                    color: {team['color']} !important;
+                }}
+                .category-summary {{
+                    border-left-color: {team['color']} !important;
+                }}
+                .category-summary-label {{
+                    color: {team['color']} !important;
+                }}
+                .questions-wrapper .section-label {{
+                    color: {team['color']} !important;
+                }}
+                .question-arrow {{
+                    color: {team['color']} !important;
+                }}
+                .stButton > button:hover {{
+                    border-color: {team['color']} !important;
+                    color: {team['color']} !important;
+                }}
+                </style>
+                """
+            ),
+            unsafe_allow_html=True,
+        )
 
 
 # ============================================================
@@ -712,6 +996,8 @@ if st.session_state.pending_question and not openai_api_key:
 # ============================================================
 
 if not openai_api_key:
+
+    render_team_picker()
 
     st.html(
         dedent(
@@ -934,6 +1220,23 @@ KBO 리그의 맥락을 우선해서 설명해주세요.
 "야구를 같이 보면서 알려주는 친구"처럼
 설명해주세요.
 """
+
+if st.session_state.favorite_team:
+    _team_name = TEAMS_BY_KEY[st.session_state.favorite_team]["name"]
+    system_prompt += dedent(
+        f"""
+
+        [사용자 응원팀]
+
+        사용자는 {_team_name}을(를) 응원하는 팬입니다.
+        가능하면 설명할 때 이 팀과 관련된 예시를 자연스럽게
+        곁들여 주세요.
+
+        다만 최신 선수 명단, 최근 경기 결과, 순위처럼
+        실시간 정보가 필요한 내용은 확실하지 않다면
+        추측하지 말고 모른다고 알려주세요.
+        """
+    )
 
 
 # ============================================================
