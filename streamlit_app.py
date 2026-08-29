@@ -19,7 +19,7 @@ st.set_page_config(
 # 2. DESIGN SYSTEM
 # ============================================================
 
-st.html(
+st.markdown(
     dedent(
         """
         <style>
@@ -521,7 +521,8 @@ st.html(
 
         </style>
         """
-    )
+    ),
+    unsafe_allow_html=True,
 )
 
 
